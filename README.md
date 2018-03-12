@@ -34,13 +34,12 @@ The project structure should look similar to the following,
     │   └── js
     │       └── bootstrap.min.js
     └── index.html
-
 ```
-The `chatserver` is the package for the chat application server side implementation. The `chat_web_client` is the web client for the chat application. This guide will elaborate more on the server-side implementation of chat application using WebSockets. 
+The `chatserver` is the package for the chat application server side implementation. The `chat_web_client` is the web client to access the chat application. This guide will elaborate more on the server-side implementation of chat application using WebSockets. 
 
 ### Implementation of the chat application using WebSockets
 
-First, you need to import the WebSocket package using the `import ballerina.net.ws;` command. Then, you can define a WebSocket web service as `service<ws> ChatApp `. You may also need to add additional WebSocket configurations using `@ws:configuration` annotation. In the chat application we'll give `basePath` as `"/chat/{name}"` and `port` as `9090`. 
+First, you need to import the WebSocket package using the `import ballerina.net.ws` statement. Then, you can define a WebSocket web service as `service<ws> ChatApp `. You may also need to add additional WebSocket configurations using `@ws:configuration` annotation. In the chat application we'll give `basePath` as `"/chat/{name}"` and `port` as `9090`. 
 Next, we need to add resources to handle each of the following events
 * Opening a new WebSocket
 * Closing an existing WebSockets
@@ -116,11 +115,11 @@ With that, we have completed the implementation of the chat application web serv
 
 ### Implementation of the web client for the chat application
 
-You can use the WebSocket API provided in JavaScript to write the web client for the chat application.
+You'll use the WebSocket API provided in JavaScript to write the web client for the chat application.
   
 First, we will create a new WebSocket connection from JavaScript.
 ```javascript
-var ws = new WebSocket("ws://localhost:9090/proxy/ws");`.
+var ws = new WebSocket("ws://localhost:9090/chat/Alice");`.
 ```
 
 Next, we need to listen to the following events for the WebSocket connection.
