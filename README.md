@@ -2,7 +2,7 @@
 [WebSocket](https://tools.ietf.org/html/rfc6455) is a computer communications protocol that allows you to open an interactive communication session between the user's browser and a server. With WebSockets, you can send messages to a server and receive responses based on events without having to query the server for a response. Ballerina language has build-in support for creating services with WebSockets.
 
 ## <a name="what-you-build"></a>  What you'll build
-You'll build a chat application using WebSockets. We will develop the chat application server completely using Ballerina language. The Ballerina WebSocket Chat application will have four resorces to handel WebSocket connections. Refer to the following diagram to understand how we are going to implement the chat application.
+You'll build a chat application using WebSockets. We will develop the chat application server completely using Ballerina language. The Ballerina WebSocket Chat application will have four resorces to handel WebSocket connections. Refer to the following diagram to understand the implementation of the chat application.
 
 &nbsp;
 ![WebSocket Scenario](images/websokcet_scenario.png)
