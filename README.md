@@ -1,8 +1,8 @@
 # Using WebSockets to develop an interactive web application
-[WebSocket](https://tools.ietf.org/html/rfc6455) is a computer communications protocol that allows you to open an interactive communication session between the user's browser and a server. With WebSockets, you can send messages to a server and receive responses based on events without having to query the server for a response. Ballerina language has build-in support for creating services with WebSockets.
+[WebSocket](https://tools.ietf.org/html/rfc6455) is a computer communications protocol that allows you to open an interactive communication session between the user's browser and a server. With WebSockets, you can send messages to a server and receive responses based on events without having to query the server for a response. Ballerina language has built-in support for creating services with WebSockets.
 
 ## <a name="what-you-build"></a>  What you'll build
-You'll build a chat application using WebSockets. We will develop the chat application server completely using Ballerina language. The Ballerina WebSocket Chat application will have four resorces to handel WebSocket connections. Refer to the following diagram to understand the implementation of the chat application.
+You'll build a Chat Application using WebSockets. We will develop the chat application server completely using Ballerina language. The Ballerina WebSocket chat application will have four resorces to handel WebSocket connections. Refer to the following diagram to understand the implementation of the chat application.
 
 &nbsp;
 ![WebSocket Scenario](images/websokcet_scenario.png)
@@ -45,6 +45,7 @@ The `chat_web_client` is the web client for the chat application. This guide wil
 
 First, you need to import the WebSocket package using the `import ballerina.net.ws;` command. Then, you can define a WebSocket web service as `service<ws> ChatApp `. You may also need to add additional WebSocket configurations using `@ws:configuration` annotation. In the chat application we'll give `basePath` as `"/chat/{name}"` and `port` as `9090`. 
 Next, we need to add resources to handle each of the following events
+* Handshaking for a new connection
 * Opening a new WebSocket
 * Closing an existing WebSockets
 * Receiving messages form WebSockets.
