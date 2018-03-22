@@ -84,12 +84,12 @@ service<ws> ChatApp {
     // In-memory map to store WebSocket connections
     map consMap = {};
 
-    //This resource will trigger when a new connection handshake takes place
+    //This resource triggers when a new connection handshake takes place
     resource onHandshake(ws:HandshakeConnection conn) {
         log:printInfo("New client is going to connect with ID: "+ conn.connectionID);
     }
     
-    // This resource will trigger when a new WebSocket connection is open
+    // This resource triggers when a new WebSocket connection is open
     resource onOpen (ws:Connection conn, string name) {
         // Add the new connection to the connection map
         consMap[conn.getID()] = conn;
@@ -106,7 +106,7 @@ service<ws> ChatApp {
         broadcast(consMap, msg);
     }
 
-    // This resource will trigger when a new text message arrives at the server
+    // This resource triggers when a new text message arrives at the server
     resource onTextMessage (ws:Connection con, ws:TextFrame frame, string name) {
         // Create the message
         string msg = string `{{name}}: {{frame.text}}`;
@@ -142,18 +142,18 @@ Now you have completed the implementation of the chat application web server.
 ### Implementation of the web client for the chat application
 
 You can use the WebSocket API provided in JavaScript to write the web client for the chat application.
-  
+
 1. Create a new WebSocket connection from JavaScript.
-```javascript
-var ws = new WebSocket("ws://localhost:9090/proxy/ws");`.
-```
+    ```javascript
+    var ws = new WebSocket("ws://localhost:9090/proxy/ws");`.
+    ```
 
 2. Listen to the following events for the WebSocket connection.
-```javascript
-ws.onmessage = onMessageFunction
-ws.onclose = onCloseFunction
-```
-Basically, you need to display the message in the web page when a new message arrives and you should display the user disconnect message when WebSocket closes.
+    ```javascript
+    ws.onmessage = onMessageFunction
+    ws.onclose = onCloseFunction
+    ```
+You need to display the message in the web page when a new message arrives and you should display the user disconnect message when WebSocket closes.
 
 The following is the implementation of the `onMessageFunction` and `onCloseFunction`.
 
@@ -168,11 +168,11 @@ The following is the implementation of the `onMessageFunction` and `onCloseFunct
         $('#connectionStatus').text("connection closed.").css("color", "red");
     }
 ```
-To send messages via WebSocket, we can use the following fucntion in JavaScript, 
+To send messages via WebSocket, use the following fucntion in JavaScript. 
 ```javascript
 ws.send("text message to send");
 ```
-Please find the complete implementation of JavaScript web client at `websocket-chat-app/chat_web_client/index.html`
+You can see the complete implementation of the JavaScript web client in the [index.html](https://github.com/ballerina-guides/websocket-integration/blob/master/chat_web_client/index.html) file.
 
 ## <a name="testing"></a> Testing 
 
@@ -180,31 +180,30 @@ Please find the complete implementation of JavaScript web client at `websocket-c
 
 You can run the chat application server that you developed above in your local environment. You need to have the Ballerina installation on your local machine and simply point to the <ballerina>/bin/ballerina binary to execute all the following steps.  
 
-1. As the first step, you can build a Ballerina executable archive (.balx) of the service that you developed above, using the following command. It points to the directory structure of the service that you developed above and it will create an executable binary out of that. 
+1. Build a Ballerina executable archive (.balx) of the service that you developed above using the following command. It points to the directory structure of the service that you developed above and it will create an executable binary out of that. 
     ```
     $ ballerina build chatserver/
     ```
 
-2. Once the chatserver.balx is created, you can run that with the following command. 
+2. Once the chatserver.balx is created, you can run it with the following command. 
     ```
     $ ballerina run chatserver.balx  
     ```
 
-3. The successful execution of the service should show us the following output. 
+3. The successful execution of the service results in the following output. 
     ```
     ballerina: deploying service(s) in 'chatserver.balx'
     ballerina: started HTTP/WS server connector 0.0.0.0:9090
     ```
 
-4. You can test the functionality using the chat application web client. Navigate to the sample base directory and find the `index.html` at the `websocket-chat-app/chat_web_client/` location. Then open the index.html file from a web browser (e.g., Chrome, Firefox). 
-Then you will see the following chat application user interface,
-  ![Chat Application UI](https://github.com/rosensilva/ballerina-samples/blob/master/web-socket-sample/images/chat_application_ui.png)  
+4. You can test the functionality using the chat application web client. Navigate to the sample base directory and find the `index.html` at the `websocket-chat-app/chat_web_client/` location. Then open the index.html file from a web browser (e.g., Chrome, Firefox). You can see the following chat application user interface.
+  ![Chat Application UI](https://github.com/ballerina-guides/websocket-integration/blob/master/images/chat_application_ui.png)  
   
     **Connect as a new user**
-    You can insert your name and age to the respective text input boxes. Then the client will connect to the chat application  once you press the `Connect` button.
+    You can insert your name and age to the respective text input boxes. The client connects to the chat application once you press the `Connect` button.
     
     **Send chat messages**
-    You can type new messages to the chat in the provided text box.  Then the client will send the message to the chat application once you press the `Send` button.
+    You can type new messages to the chat in the provided text box. The client sends the message to the chat application once you press the `Send` button.
     
     **Recieve chat messages**
     You can see the new messages as they arrive in the chat application client user interface.
@@ -213,7 +212,7 @@ Then you will see the following chat application user interface,
     You can exit from the chat application once you press the `Disconnect` button.
     
     **Join multiple clients to the chat server**
-    You can login to chat application using multiple browsers or from the same browser. To test this, you can open multiple instances of `websocket-chat-app/chat_web_client/index.html` from your browser/s.
+    You can log in to the chat application using multiple browsers or from the same browser. To test this, you can open multiple instances of `websocket-chat-app/chat_web_client/index.html` from your browser/s.
 
 ### <a name="unit-testing"></a> Writing Unit Tests 
 
