@@ -25,7 +25,7 @@ NOTE: You'll use JavaScript and HTML to implement the browser client for the cha
 ## <a name="pre-req"></a> Prerequisites
  
 * JDK 1.8 or later
-* [Ballerina Distribution](https://ballerinalang.org/docs/quick-tour/quick-tour/#install-ballerina)
+* [Ballerina Distribution](https://github.com/ballerina-lang/ballerina/blob/master/docs/quick-tour.md)
 * A Text Editor or an IDE
 
 **Optional requirements**
