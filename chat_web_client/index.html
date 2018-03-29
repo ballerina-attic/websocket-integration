@@ -83,7 +83,7 @@ JavaScript code related to web socket connection management
             personAge = $('#personAge').val();
 
             if(personAge){
-                url = url + personName + "?age="+personAge;
+                url = url + "?name="+personName + "&age="+personAge;
             }
             else{
                 url = url + personName;
@@ -111,7 +111,8 @@ JavaScript code related to web socket connection management
         // Send the message if user press enter key
         $('#sendText').keydown(function (e) {
             if (e.keyCode == 13) {
-                sendMessage();
+            	var text = $('#sendText').val();
+                sendMessage(text);
             }
         });
 
