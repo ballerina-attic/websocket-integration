@@ -21,7 +21,7 @@ service<http:WebSocketService> ChatApp bind ep {
 
     // This resource will trigger when a new connection upgrades to WebSockets
     onUpgrade (endpoint ep, http:Request req) {
-        // Get the query parameters and path parameters to send greeting message
+        // Get the query parameters and path parameters to set the greeting message
         var params = req.getQueryParams();
         string name = untaint <string>params.name;
         if (name != null) {
