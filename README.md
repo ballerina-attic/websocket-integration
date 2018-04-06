@@ -1,4 +1,5 @@
-# Using WebSockets to Develop an Interactive Web Application
+[![Build Status](https://travis-ci.org/rosensilva/websocket-integration.svg?branch=master)](https://travis-ci.org/rosensilva/websocket-integration)
+# WebSockets
 [WebSocket](https://tools.ietf.org/html/rfc6455) is a computer communications protocol that allows you to open an interactive communication session between the user's browser and a server. With WebSockets, you can send messages to a server and receive responses based on events without having to query the server for a response. Ballerina language has built-in support for creating services with WebSockets.
 
 > This guide showcases how you can use WebSockets to develop an interactive web application and build the application server using Ballerina language.
@@ -39,8 +40,10 @@ NOTE: You'll use JavaScript and HTML to implement the browser client for the cha
 Ballerina is a complete programming language that can have any custom project structure that you wish. Although the language allows you to have any package structure, use the following package structure for this project to follow this guide.
 
 ```
-├── chatserver
-│   └── chat_app.bal
+├── src
+|   └── chatserver
+|        └── chat_app.bal
+|
 └── chat_web_client
     ├── bootstrap-3
     │   ├── css
@@ -57,81 +60,103 @@ The `chat_web_client` is the web client for the chat application. This guide ela
 
 ### Implementation of the chat application using WebSockets
 
-First, you need to import the WebSocket package using the `import ballerina.net.ws;` command. Then, you can define a WebSocket web service as `service<ws> ChatApp`. You may also need to add additional WebSocket configurations using `@ws:configuration` annotation. In the chat application specify the `basePath` as `"/chat/{name}"` and `port` as `9090`.
+First, you need to import the http package using the `import ballerina/net.http;` statement. Then, you can define a WebSocket web service as `service<http:WebSocketService> ChatApp`. You may also need to add additional WebSocket configurations using `@http:WebSocketServiceConfig` annotation. In the chat application specify the `basePath` as `/chat`.
 
 Next, you need to add resources to handle each of the following events.
-* Handshaking for a new connection
+* Upgrading http connection to WebSocket conenction
 * Opening a new WebSocket
+* Receiving messages form WebSockets
 * Closing an existing WebSockets
-* Receiving messages form WebSockets.
 
-Inside each resource you can implement the logic as per the requirement. When following this guide, you will implement the chat application logic inside those resources. You can then use an in-memory map to save all the WebSocket connections. Thereafter, you can add the incoming WebSocket connection to the map inside the `onOpen` resource. Remove the WebSocket connection from the map inside the `onClose` resource and broadcast the message to all the connections in the map inside the `onTextMessage` resource. To view the complete implementation of the chat application, see the [chat_app.bal](https://github.com/ballerina-guides/websocket-integration/blob/master/chatserver/chat_app.bal) file.
+Inside each resource you can implement the logic as per the requirement. When following this guide, you will implement the chat application logic inside those resources. You can then use an in-memory map to save all the WebSocket connections. Thereafter, you can add the new incoming WebSocket connections to the in-memory map inside the `onOpen` resource. Remove the WebSocket connection from the map inside the `onClose` resource and broadcast the message to all the connections in the map inside the `onTextMessage` resource. To view the complete implementation of the chat application, see the [chat_app.bal](https://github.com/ballerina-guides/websocket-integration/blob/master/chatserver/chat_app.bal) file.
 
 #### chat_app.bal
 ```ballerina
 package chatserver;
 
-import ballerina.io;
-import ballerina.log;
-import ballerina.net.ws;
+import ballerina/io;
+import ballerina/net.http;
 
+const string NAME = "NAME";
+const string AGE = "AGE";
 
-@ws:configuration {
-    basePath:"/chat/{name}",
+// Define an endpoint to the chat application
+endpoint http:ServiceEndpoint ep {
     port:9090
-}
-service<ws> ChatApp {
-    // In-memory map to store WebSocket connections
-    map consMap = {};
+};
 
-    //This resource triggers when a new connection handshake takes place
-    resource onHandshake(ws:HandshakeConnection conn) {
-        log:printInfo("New client is going to connect with ID: "+ conn.connectionID);
-    }
-    
-    // This resource triggers when a new WebSocket connection is open
-    resource onOpen (ws:Connection conn, string name) {
-        // Add the new connection to the connection map
-        consMap[conn.getID()] = conn;
-        // Get the query parameters and path parameters to send a greeting message
-        map params = conn.getQueryParams();
-        var age, err = (string)params.age;
-        string msg;
-        if (err == null) {
-            msg = string `{{name}} with age {{age}} connected to chat`;
-        } else {
+@http:WebSocketServiceConfig {
+    basePath:"/chat"
+}
+service<http:WebSocketService> ChatApp bind ep {
+    // In-memory map to store web socket connections
+    map<http:WebSocketConnector> consMap = {};
+    string msg;
+
+    // This resource will trigger when a new connection upgrades to WebSockets
+    onUpgrade (endpoint ep, http:Request req) {
+        // Get the query parameters and path parameters to set the greeting message
+        var params = req.getQueryParams();
+        string name = untaint <string>params.name;
+        if (name != null) {
+            // If client connected with a name
+            ep.getClient().attributes[NAME] = name;
             msg = string `{{name}} connected to chat`;
+        } else {
+            // Throw an error if client connected without a name
+            error err = {message:"Please enter a name"};
+            throw err;
         }
+        string age = untaint <string>params.age;
+
+        if (age != null) {
+            // If client has given a age display it in greeting message
+            ep.getClient().attributes[AGE] = age;
+            msg = string `{{name}} with age {{age}} connected to chat`;
+        }
+    }
+
+    // This resource will trigger when a new web socket connection is open
+    onOpen (endpoint ep) {
+        // Get the WebSocket client from the endpoint
+        var conn = ep.getClient();
+        // Add the new connection to the connection map
+        consMap[conn.id] = conn;
         // Broadcast the "new user connected" message to existing connections
         broadcast(consMap, msg);
+        // Print the message in the server console
+        io:println(msg);
     }
 
-    // This resource triggers when a new text message arrives at the server
-    resource onTextMessage (ws:Connection con, ws:TextFrame frame, string name) {
-        // Create the message
-        string msg = string `{{name}}: {{frame.text}}`;
-        io:println(msg);
+    // This resource wil trigger when a new text message arrives to the chat server
+    onTextMessage (endpoint ep, http:TextFrame frame) {
+        // Prepare the message
+        msg = untaint string `{{untaint <string>ep.getClient().attributes[NAME]}}: {{frame.text}}`;
         // Broadcast the message to existing connections
         broadcast(consMap, msg);
+        // Print the message in the server console
+        io:println(msg);
     }
 
-    // This resource will trigger when an existing connection closes
-    resource onClose (ws:Connection con, ws:CloseFrame frame, string name) {
-        // Create the client left message
-        string msg = string `{{name}} left the chat`;
-        // Remove the connection from the connection map
-        consMap.remove(con.getID());
-        // Broadcast the client left message to existing connections
+    // This resource will trigger when a existing connection closed
+    onClose (endpoint ep, http:CloseFrame frame) {
+        var con = ep.getClient();
+        // Prepare the client left message
+        msg = string `{{untaint <string>ep.getClient().attributes[NAME]}} left the chat`;
+        // Remove the client from the in memory map
+        _ = consMap.remove(con.id);
+        // Broadcast the message to existing connections
         broadcast(consMap, msg);
+        // Print the message in the server console
+        io:println(msg);
     }
 }
 
 // Custom function to send the test to all connections in the connection map
-function broadcast (map consMap, string text) {
+function broadcast (map<http:WebSocketConnector> consMap, string text) {
     // Iterate through all available connections in the connections map
-    foreach wsConnection in consMap {
-        var con, _ = (ws:Connection)wsConnection;
-        // Send the text message to the connection
+    foreach con in consMap {
+        // Push the text message to the connection
         con.pushText(text);
     }
 }
@@ -145,7 +170,7 @@ You can use the WebSocket API provided in JavaScript to write the web client for
 
 1. Create a new WebSocket connection from JavaScript.
     ```javascript
-    var ws = new WebSocket("ws://localhost:9090/proxy/ws");`.
+    var ws = new WebSocket("ws://localhost:9090/chat?name=Alice&age=20");`.
     ```
 
 2. Listen to the following events for the WebSocket connection.
