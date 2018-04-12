@@ -1,15 +1,39 @@
 package chatserver;
 
 import ballerina/io;
-import ballerina/net.http;
+import ballerina/http;
+//import ballerinax/docker;
+//import ballerinax/kubernetes;
 
-const string NAME = "NAME";
-const string AGE = "AGE";
+//@docker:Config {
+//    registry:"ballerina.guides.io",
+//    name:"chat_app",
+//    tag:"v1.0"
+//}
+
+//@kubernetes:Ingress {
+//    hostname:"ballerina.guides.io",
+//    name:"ballerina-guides-chat-app",
+//    path:"/"
+//}
+//
+//@kubernetes:Service {
+//    serviceType:"NodePort",
+//    name:"ballerina-guides-chat-app"
+//}
+//
+//@kubernetes:Deployment {
+//    image:"ballerina.guides.io/chat_app:v1.0",
+//    name:"ballerina-guides-chat-app"
+//}
 
 // Define an endpoint to the chat application
 endpoint http:ServiceEndpoint ep {
     port:9090
 };
+
+const string NAME = "NAME";
+const string AGE = "AGE";
 
 @http:WebSocketServiceConfig {
     basePath:"/chat"
