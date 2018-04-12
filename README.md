@@ -6,14 +6,14 @@
 
 The following are the sections available in this guide.
 
-- [What you'll build](#what-you-build)
-- [Prerequisites](#pre-req)
-- [Developing the app](#develop-app)
+- [What you'll build](#what-youll-build)
+- [Prerequisites](#prerequisites)
+- [Developing the app](#develop-the-websocket-application)
 - [Testing](#testing)
-- [Deployment](#deploying-the-scenario)
+- [Deployment](#deployment)
 - [Observability](#observability)
 
-## <a name="what-you-build"></a>  What you'll build
+## What you'll build
 You'll build a chat application using WebSockets. This guide instructs you how to develop the chat application server completely using Ballerina language. The Ballerina WebSocket chat application has four resources to handle WebSocket connections. Refer to the following diagram to understand the implementation of the chat application.
 
 &nbsp;
@@ -23,7 +23,7 @@ You'll build a chat application using WebSockets. This guide instructs you how t
   
 NOTE: You'll use JavaScript and HTML to implement the browser client for the chat application. However, this guide only explains the JavaScript implementation of the web client.
 
-## <a name="pre-req"></a> Prerequisites
+## Prerequisites
  
 * JDK 1.8 or later
 * [Ballerina Distribution](https://github.com/ballerina-lang/ballerina/blob/master/docs/quick-tour.md)
@@ -33,7 +33,7 @@ NOTE: You'll use JavaScript and HTML to implement the browser client for the cha
 - Ballerina IDE plugins ([IntelliJ IDEA](https://plugins.jetbrains.com/plugin/9520-ballerina), [VSCode](https://marketplace.visualstudio.com/items?itemName=WSO2.Ballerina), [Atom](https://atom.io/packages/language-ballerina))
 - [Docker](https://docs.docker.com/engine/installation/)
 
-## <a name="develop-app"></a> Develop the application
+## Develop the websocket application
 ### Before you begin
 
 #### Understand the project structure
@@ -89,12 +89,12 @@ endpoint http:ServiceEndpoint ep {
     basePath:"/chat"
 }
 service<http:WebSocketService> ChatApp bind ep {
-    // In-memory map to store web socket connections
+// In-memory map to store web socket connections
     map<http:WebSocketConnector> consMap = {};
     string msg;
 
-    // This resource will trigger when a new connection upgrades to WebSockets
-    onUpgrade (endpoint ep, http:Request req) {
+// This resource will trigger when a new connection upgrades to WebSockets
+    onUpgrade(endpoint ep, http:Request req) {
         // Get the query parameters and path parameters to set the greeting message
         var params = req.getQueryParams();
         string name = untaint <string>params.name;
@@ -116,8 +116,8 @@ service<http:WebSocketService> ChatApp bind ep {
         }
     }
 
-    // This resource will trigger when a new web socket connection is open
-    onOpen (endpoint ep) {
+// This resource will trigger when a new web socket connection is open
+    onOpen(endpoint ep) {
         // Get the WebSocket client from the endpoint
         var conn = ep.getClient();
         // Add the new connection to the connection map
@@ -128,18 +128,19 @@ service<http:WebSocketService> ChatApp bind ep {
         io:println(msg);
     }
 
-    // This resource wil trigger when a new text message arrives to the chat server
-    onTextMessage (endpoint ep, http:TextFrame frame) {
+// This resource wil trigger when a new text message arrives to the chat server
+    onTextMessage(endpoint ep, http:TextFrame frame) {
         // Prepare the message
-        msg = untaint string `{{untaint <string>ep.getClient().attributes[NAME]}}: {{frame.text}}`;
+        msg = untaint string `{{untaint <string>ep.getClient().attributes[NAME]}}:
+         {{frame.text}}`;
         // Broadcast the message to existing connections
         broadcast(consMap, msg);
         // Print the message in the server console
         io:println(msg);
     }
 
-    // This resource will trigger when a existing connection closed
-    onClose (endpoint ep, http:CloseFrame frame) {
+// This resource will trigger when a existing connection closed
+    onClose(endpoint ep, http:CloseFrame frame) {
         var con = ep.getClient();
         // Prepare the client left message
         msg = string `{{untaint <string>ep.getClient().attributes[NAME]}} left the chat`;
@@ -153,7 +154,7 @@ service<http:WebSocketService> ChatApp bind ep {
 }
 
 // Custom function to send the test to all connections in the connection map
-function broadcast (map<http:WebSocketConnector> consMap, string text) {
+function broadcast(map<http:WebSocketConnector> consMap, string text) {
     // Iterate through all available connections in the connections map
     foreach con in consMap {
         // Push the text message to the connection
@@ -199,9 +200,9 @@ ws.send("text message to send");
 ```
 You can see the complete implementation of the JavaScript web client in the [index.html](https://github.com/ballerina-guides/websocket-integration/blob/master/chat_web_client/index.html) file.
 
-## <a name="testing"></a> Testing 
+## Testing 
 
-### <a name="invoking"></a> Invoking the chat application web service 
+### Invoking the chat application web service 
 
 You can run the chat application server that you developed above in your local environment. You need to have the Ballerina installation on your local machine and simply point to the <ballerina>/bin/ballerina binary to execute all the following steps.  
 
@@ -239,14 +240,16 @@ You can run the chat application server that you developed above in your local e
     **Join multiple clients to the chat server**
     You can log in to the chat application using multiple browsers or from the same browser. To test this, you can open multiple instances of `websocket-chat-app/chat_web_client/index.html` from your browser/s.
 
-### <a name="unit-testing"></a> Writing Unit Tests 
+### Writing Unit Tests 
 
 In Ballerina, the unit test cases should be in the same package and the naming convention should be as follows.
 * Test files should contain _test.bal suffix.
 * Test functions should contain test prefix.
   * e.g., testOnMessage()
 
-### <a name="deploying-on-docker"></a> Deploying on Docker
+## Deployment
+
+### Deploying on Docker
 
 You can use the Ballerina executable (.balx) archive that you created above and create a docker image using the following command. 
 ```
@@ -259,19 +262,5 @@ Once you have created the docker image, you can run it using docker run.
 docker run -p <host_port>:9090 --name ballerina_chatserver -d chatserver:latest
 ```
 
-### <a name="deploying-on-k8s"></a> Deploying on Kubernetes
-(Work in progress) 
-
-
-## <a name="observability"></a> Observability 
-
-
-### <a name="logging"></a> Logging
-(Work in progress) 
-
-### <a name="metrics"></a> Metrics
-(Work in progress) 
-
-
-### <a name="tracing"></a> Tracing 
+### Deploying on Kubernetes
 (Work in progress) 
