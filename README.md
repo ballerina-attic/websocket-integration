@@ -11,7 +11,6 @@ The following are the sections available in this guide.
 - [Developing the app](#develop-the-websocket-application)
 - [Testing](#testing)
 - [Deployment](#deployment)
-- [Observability](#observability)
 
 ## What you'll build
 You'll build a chat application using WebSockets. This guide instructs you how to develop the chat application server completely using Ballerina language. The Ballerina WebSocket chat application has four resources to handle WebSocket connections. Refer to the following diagram to understand the implementation of the chat application.
