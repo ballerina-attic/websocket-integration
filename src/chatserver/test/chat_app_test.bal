@@ -1,10 +1,9 @@
 package chatserver;
 
-import ballerina/net.http;
+import ballerina/http;
 import ballerina/test;
 
-const string ASSOCIATED_CONNECTION = "ASSOCIATED_CONNECTION";
-
+@final string ASSOCIATED_CONNECTION = "ASSOCIATED_CONNECTION";
 
 // Before suite function
 @test:BeforeSuite
