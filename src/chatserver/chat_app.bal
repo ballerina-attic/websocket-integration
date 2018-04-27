@@ -4,12 +4,37 @@ import ballerina/http;
 @final string NAME = "NAME";
 @final string AGE = "AGE";
 
-map<http:WebSocketListener> consMap;
+//import ballerinax/docker;
+//import ballerinax/kubernetes;
+
+//@docker:Config {
+//    registry:"ballerina.guides.io",
+//    name:"chat_app",
+//    tag:"v1.0"
+//}
+
+//@kubernetes:Ingress {
+//    hostname:"ballerina.guides.io",
+//    name:"ballerina-guides-chat-app",
+//    path:"/" 
+//}
+//
+//@kubernetes:Service {
+//    serviceType:"NodePort",
+//    name:"ballerina-guides-chat-app"
+//}
+//
+//@kubernetes:Deployment {
+//    image:"ballerina.guides.io/chat_app:v1.0",
+//    name:"ballerina-guides-chat-app"
+//}
 
 // Define an endpoint to the chat application
 endpoint http:WebSocketListener ep {
     port: 9090
 };
+
+map<http:WebSocketListener> consMap;
 
 @http:ServiceConfig {
     basePath: "/chat"

@@ -16,7 +16,7 @@ The following are the sections available in this guide.
 You'll build a chat application using WebSockets. This guide instructs you how to develop the chat application server completely using Ballerina language. The Ballerina WebSocket chat application has four resources to handle WebSocket connections. Refer to the following diagram to understand the implementation of the chat application.
 
 &nbsp;
-![WebSocket Scenario](images/websocket-integration.png)
+![WebSocket Scenario](images/websocket-integration.svg)
 &nbsp; 
 
   
@@ -169,15 +169,15 @@ Now you have completed the implementation of the chat application web server.
 You can use the WebSocket API provided in JavaScript to write the web client for the chat application.
 
 1. Create a new WebSocket connection from JavaScript.
-    ```javascript
-    var ws = new WebSocket("ws://localhost:9090/chat?name=Alice&age=20");`.
-    ```
+```javascript
+var ws = new WebSocket("ws://localhost:9090/chat?name=Alice&age=20");`.
+```
 
 2. Listen to the following events for the WebSocket connection.
-    ```javascript
-    ws.onmessage = onMessageFunction
-    ws.onclose = onCloseFunction
-    ```
+```javascript
+ws.onmessage = onMessageFunction
+ws.onclose = onCloseFunction
+```
 You need to display the message in the web page when a new message arrives and you should display the user disconnect message when WebSocket closes.
 
 The following is the implementation of the `onMessageFunction` and `onCloseFunction`.
@@ -193,10 +193,12 @@ The following is the implementation of the `onMessageFunction` and `onCloseFunct
         $('#connectionStatus').text("connection closed.").css("color", "red");
     }
 ```
+
 To send messages via WebSocket, use the following fucntion in JavaScript. 
 ```javascript
 ws.send("text message to send");
 ```
+
 You can see the complete implementation of the JavaScript web client in the [index.html](https://github.com/ballerina-guides/websocket-integration/blob/master/chat_web_client/index.html) file.
 
 ## Testing 
@@ -206,20 +208,20 @@ You can see the complete implementation of the JavaScript web client in the [ind
 You can run the chat application server that you developed above in your local environment. You need to have the Ballerina installation on your local machine and simply point to the <ballerina>/bin/ballerina binary to execute all the following steps.  
 
 1. Build a Ballerina executable archive (.balx) of the service that you developed above using the following command. It points to the directory structure of the service that you developed above and it will create an executable binary out of that. 
-    ```
-    $ ballerina build chatserver/
-    ```
+```
+$ ballerina build chatserver/
+```
 
 2. Once the chatserver.balx is created, you can run it with the following command. 
-    ```
-    $ ballerina run chatserver.balx  
-    ```
+```
+$ ballerina run chatserver.balx  
+```
 
 3. The successful execution of the service results in the following output. 
-    ```
-    ballerina: deploying service(s) in 'chatserver.balx'
-    ballerina: started HTTP/WS server connector 0.0.0.0:9090
-    ```
+```
+ballerina: deploying service(s) in 'chatserver.balx'
+ballerina: started HTTP/WS server connector 0.0.0.0:9090
+```
 
 4. You can test the functionality using the chat application web client. Navigate to the sample base directory and find the `index.html` at the `websocket-chat-app/chat_web_client/` location. Then open the index.html file from a web browser (e.g., Chrome, Firefox). You can see the following chat application user interface.
   ![Chat Application UI](https://github.com/ballerina-guides/websocket-integration/blob/master/images/chat_application_ui.png)  
@@ -250,16 +252,135 @@ In Ballerina, the unit test cases should be in the same package and the naming c
 
 ### Deploying on Docker
 
-You can use the Ballerina executable (.balx) archive that you created above and create a docker image using the following command. 
+You can run the service that we developed above as a docker container. As Ballerina platform offers native support for running ballerina programs on containers, you just need to put the corresponding docker annotations on your service code. 
+
+- In our chat_app, we need to import  `` import ballerinax/docker; `` and use the annotation `` @docker:Config `` as shown below to enable docker image generation during the build time. 
+
+##### chat_app.bal
+```ballerina
+package chatserver;
+
+import ballerina/http;
+import ballerinax/docker;
+
+@docker:Config {
+    registry:"ballerina.guides.io",
+    name:"chat_app",
+    tag:"v1.0"
+}
+
+endpoint http:ServiceEndpoint ep {
+    port:9090
+};
+
+// Define constants
+
+@http:WebSocketServiceConfig {
+    basePath:"/chat"
+}
+service<http:WebSocketService> ChatApp bind ep {
+``` 
+
+- Now you can build a Ballerina executable archive (.balx) of the service that we developed above, using the following command. It points to the service file that we developed above and it will create an executable binary out of that. 
+This will also create the corresponding docker image using the docker annotations that you have configured above. Navigate to the `<SAMPLE_ROOT>/src/` folder and run the following command.  
+  
 ```
-ballerina docker chatserver.balx  
+$ballerina build chatserver
+
+Run following command to start docker container: 
+docker run -d -p 9090:9090 ballerina.guides.io/chat_app:v1.0
 ```
 
-Once you have created the docker image, you can run it using docker run. 
+- Once you successfully build the docker image, you can run it with the `` docker run`` command that is shown in the previous step.  
 
+```   
+docker run -d -p 9090:9090 ballerina.guides.io/chat_app:v1.0
 ```
-docker run -p <host_port>:9090 --name ballerina_chatserver -d chatserver:latest
-```
+
+  Here we run the docker image with flag`` -p <host_port>:<container_port>`` so that we  use  the host port 9090 and the container port 9090. Therefore you can access the service through the host port. 
+
+- Verify docker container is running with the use of `` $ docker ps``. The status of the docker container should be shown as 'Up'.
+
+- You can test this service using the same way we followed earlier.
+
 
 ### Deploying on Kubernetes
-(Work in progress) 
+
+- You can run the service that we developed above, on Kubernetes. The Ballerina language offers native support for running a ballerina programs on Kubernetes, 
+with the use of Kubernetes annotations that you can include as part of your service code. Also, it will take care of the creation of the docker images. 
+So you don't need to explicitly create docker images prior to deploying it on Kubernetes.   
+
+- We need to import `` import ballerinax/kubernetes; `` and use `` @kubernetes `` annotations as shown below to enable kubernetes deployment for the service we developed above. 
+
+##### chat_app.bal
+
+```ballerina
+package chatserver;
+
+import ballerina/http;
+import ballerinax/kubernetes;
+
+@kubernetes:Ingress {
+    hostname:"ballerina.guides.io",
+    name:"ballerina-guides-chat-app",
+    path:"/"
+}
+
+@kubernetes:Service {
+    serviceType:"NodePort",
+    name:"ballerina-guides-chat-app"
+}
+
+@kubernetes:Deployment {
+    image:"ballerina.guides.io/chat_app:v1.0",
+    name:"ballerina-guides-chat-app"
+}
+
+endpoint http:ServiceEndpoint ep {
+    port:9090
+};
+
+// Define constants
+
+@http:WebSocketServiceConfig {
+    basePath:"/chat"
+}
+service<http:WebSocketService> ChatApp bind ep {    
+``` 
+
+- Here we have used ``  @kubernetes:Deployment `` to specify the docker image name which will be created as part of building this service. 
+- We have also specified `` @kubernetes:Service {} `` so that it will create a Kubernetes service which will expose the Ballerina service that is running on a Pod.  
+- In addition we have used `` @kubernetes:Ingress `` which is the external interface to access your service (with path `` /`` and host name ``ballerina.guides.io``)
+
+- Now you can build a Ballerina executable archive (.balx) of the service that we developed above, using the following command. It points to the service file that we developed above and it will create an executable binary out of that. 
+This will also create the corresponding docker image and the Kubernetes artifacts using the Kubernetes annotations that you have configured above.
+  
+```
+$ballerina build chatserver
+
+Run following command to deploy kubernetes artifacts:  
+kubectl apply -f ./target/chatserver/kubernetes
+```
+
+- You can verify that the docker image that we specified in `` @kubernetes:Deployment `` is created, by using `` docker ps images ``. 
+- Also the Kubernetes artifacts related our service, will be generated in `` ./target/chatserver/kubernetes``. 
+- Now you can create the Kubernetes deployment using:
+
+```
+$kubectl apply -f ./target/chatserver/kubernetes 
+
+deployment.extensions "ballerina-guides-chat-app" created
+ingress.extensions "ballerina-guides-chat-app" created
+service "ballerina-guides-chat-app" created
+```
+
+- You can verify Kubernetes deployment, service and ingress are running properly, by using following Kubernetes commands. 
+```
+$kubectl get service
+$kubectl get deploy
+$kubectl get pods
+$kubectl get ingress
+```
+
+- If everything is successfully deployed, you can invoke the service either via Node port or ingress. 
+
