@@ -16,7 +16,7 @@ import ballerina/http;
 //@kubernetes:Ingress {
 //    hostname:"ballerina.guides.io",
 //    name:"ballerina-guides-chat-app",
-//    path:"/" 
+//    path:"/"
 //}
 //
 //@kubernetes:Service {
@@ -34,10 +34,8 @@ endpoint http:WebSocketListener ep {
     port: 9090
 };
 
-map<http:WebSocketListener> consMap;
-
-@http:ServiceConfig {
-    basePath: "/chat"
+@http:WebSocketServiceConfig {
+    basePath:"/chat"
 }
 service<http:Service> ChatAppUpgrader bind ep {
 
