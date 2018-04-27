@@ -50,7 +50,9 @@ endpoint http:WebSocketListener ep {
     port: 9090
 };
 
+// In-memory map to save the connections
 map<http:WebSocketListener> consMap;
+
 
 @http:ServiceConfig {
     basePath: "/chat"
