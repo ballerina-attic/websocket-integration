@@ -1,5 +1,3 @@
-package chatserver;
-
 import ballerina/http;
 import ballerina/test;
 
