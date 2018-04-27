@@ -34,8 +34,10 @@ endpoint http:WebSocketListener ep {
     port: 9090
 };
 
-@http:WebSocketServiceConfig {
-    basePath:"/chat"
+map<http:WebSocketListener> consMap;
+
+@http:ServiceConfig {
+    basePath: "/chat"
 }
 service<http:Service> ChatAppUpgrader bind ep {
 
