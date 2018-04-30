@@ -8,7 +8,7 @@ The following are the sections available in this guide.
 
 - [What you'll build](#what-youll-build)
 - [Prerequisites](#prerequisites)
-- [Developing the app](#develop-the-websocket-application)
+- [Implementation](#implementation)
 - [Testing](#testing)
 - [Deployment](#deployment)
 - [Observability](#observability)
