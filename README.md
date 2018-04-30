@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ballerina-guide/websocket-integration.svg?branch=master)](https://travis-ci.org/ballerina-guide/websocket-integration)
+[![Build Status](https://travis-ci.org/ballerina-guides/websocket-integration.svg?branch=master)](https://travis-ci.org/ballerina-guides/websocket-integration)
 # WebSockets
 [WebSocket](https://tools.ietf.org/html/rfc6455) is a computer communications protocol that allows you to open an interactive communication session between the user's browser and a server. With WebSockets, you can send messages to a server and receive responses based on events without having to query the server for a response. Ballerina language has built-in support for creating services with WebSockets.
 
@@ -8,7 +8,7 @@ The following are the sections available in this guide.
 
 - [What you'll build](#what-youll-build)
 - [Prerequisites](#prerequisites)
-- [Developing the app](#develop-the-websocket-application)
+- [Implementation](#implementation)
 - [Testing](#testing)
 - [Deployment](#deployment)
 - [Observability](#observability)
