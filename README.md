@@ -97,18 +97,18 @@ import ballerina/http;
 @final string NAME = "NAME";
 @final string AGE = "AGE";
 
-// In-memory map to save the connections
-map<http:WebSocketListener> consMap;
-
 // Define an endpoint to the chat application
-endpoint http:WebSocketListener ep {
+endpoint http:WebSocketListener listener {
     port: 9090
 };
+
+// In-memory map to save the connections
+map<http:WebSocketListener> consMap;
 
 @http:ServiceConfig {
     basePath: "/chat"
 }
-service<http:Service> ChatAppUpgrader bind ep {
+service<http:Service> ChatAppUpgrader bind listener {
 
     //Upgrade from HTTP to WebSocket and define the service the WebSocket client
     @http:ResourceConfig {
@@ -129,7 +129,6 @@ service<http:Service> ChatAppUpgrader bind ep {
         };
     }
 }
-
 
 service<http:WebSocketService> ChatApp {
 
@@ -166,10 +165,10 @@ service<http:WebSocketService> ChatApp {
 }
 
 // Function to send the test to all connections in the connection map
-function broadcast(map<http:WebSocketListener> consMap, string text) {
+function broadcast(map<http:WebSocketListener> connections, string text) {
     endpoint http:WebSocketListener ep;
     // Iterate through all available connections in the connections map
-    foreach id, con in consMap {
+    foreach id, con in connections {
         ep = con;
         // Push the text message to the connection
         ep->pushText(text) but {
@@ -193,7 +192,7 @@ You can use the WebSocket API provided in JavaScript to write the web client for
 
 1. Create a new WebSocket connection from JavaScript.
 ```javascript
-var ws = new WebSocket("ws://localhost:9090/Alice?age=20");`.
+var ws = new WebSocket("ws://localhost:9090/chat/Alice?age=20");`.
 ```
 
 2. Listen to the following events for the WebSocket connection.
