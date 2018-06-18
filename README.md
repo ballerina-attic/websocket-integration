@@ -98,7 +98,7 @@ import ballerina/http;
 @final string AGE = "AGE";
 
 // In-memory map to save the connections
-map<http:WebSocketListener> consMap;
+map<http:WebSocketListener> connectionsMap;
 
 // Define an endpoint to the chat application
 endpoint http:WebSocketListener ep {
@@ -117,10 +117,10 @@ service<http:Service> ChatAppUpgrader bind ep {
             upgradeService: ChatApp
         }
     }
-    upgrader(endpoint ep, http:Request req, string name) {
+    upgrader(endpoint caller, http:Request req, string name) {
         endpoint http:WebSocketListener wsEp;
         map<string> headers;
-        wsEp = ep->acceptWebSocketUpgrade(headers);
+        wsEp = caller->acceptWebSocketUpgrade(headers);
         wsEp.attributes[NAME] = name;
         wsEp.attributes[AGE] = req.getQueryParams()["age"];
         string msg = "Hi " + name + "! You have succesfully connected to the chat";
@@ -136,43 +136,43 @@ service<http:WebSocketService> ChatApp {
     // This resource will trigger when a new web socket connection is open
     onOpen(endpoint conn) {
         // Add the new connection to the connection map
-        consMap[conn.id] = conn;
+        connectionsMap[conn.id] = conn;
         // Broadcast the "new user connected" message to existing connections
         string msg = string `{{getAttributeStr(conn, NAME)}} with age {{getAttributeStr(
                                                                             conn, AGE)}}
          connected to chat`;
-        broadcast(consMap, msg);
+        broadcast(connectionsMap, msg);
     }
 
     // This resource will trigger when a new text message arrives to the chat server
-    onText(endpoint conn, string text) {
+    onText(endpoint caller, string text) {
         // Prepare the message
-        string msg = string `{{getAttributeStr(conn, NAME)}}: {{text}}`;
+        string msg = string `{{getAttributeStr(caller, NAME)}}: {{text}}`;
         // Broadcast the message to existing connections
-        broadcast(consMap, msg);
+        broadcast(connectionsMap, msg);
         // Print the message in the server console
         log:printInfo(msg);
     }
 
     // This resource will trigger when a existing connection closed
-    onClose(endpoint conn, int statusCode, string reason) {
+    onClose(endpoint caller, int statusCode, string reason) {
         // Remove the client from the in memory map
-        _ = consMap.remove(conn.id);
+        _ = connectionsMap.remove(caller.id);
         // Prepare the client left message
-        string msg = string `{{getAttributeStr(conn, NAME)}} left the chat`;
+        string msg = string `{{getAttributeStr(caller, NAME)}} left the chat`;
         // Broadcast the message to existing connections
-        broadcast(consMap, msg);
+        broadcast(connectionsMap, msg);
     }
 }
 
 // Function to send the test to all connections in the connection map
 function broadcast(map<http:WebSocketListener> consMap, string text) {
-    endpoint http:WebSocketListener ep;
+    endpoint http:WebSocketListener caller;
     // Iterate through all available connections in the connections map
     foreach id, con in consMap {
-        ep = con;
+        caller = con;
         // Push the text message to the connection
-        ep->pushText(text) but {
+        caller->pushText(text) but {
             error e => log:printError("Error sending message")
         };
     }
@@ -193,7 +193,7 @@ You can use the WebSocket API provided in JavaScript to write the web client for
 
 1. Create a new WebSocket connection from JavaScript.
 ```javascript
-var ws = new WebSocket("ws://localhost:9090/Alice?age=20");`.
+var ws = new WebSocket("ws://localhost:9090/chat/Alice?age=20");`.
 ```
 
 2. Listen to the following events for the WebSocket connection.
