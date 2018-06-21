@@ -46,7 +46,7 @@ import ballerina/http;
 //}
 
 // Define an endpoint to the chat application
-endpoint http:WebSocketListener ep {
+endpoint http:WebSocketListener listener {
     port: 9090
 };
 
@@ -57,7 +57,7 @@ map<http:WebSocketListener> consMap;
 @http:ServiceConfig {
     basePath: "/chat"
 }
-service<http:Service> ChatAppUpgrader bind ep {
+service<http:Service> ChatAppUpgrader bind listener {
 
     //Upgrade from HTTP to WebSocket and define the service the WebSocket client
     @http:ResourceConfig {
@@ -115,10 +115,10 @@ service<http:WebSocketService> ChatApp {
 }
 
 // Function to send the test to all connections in the connection map
-function broadcast(map<http:WebSocketListener> consMap, string text) {
+function broadcast(map<http:WebSocketListener> connections, string text) {
     endpoint http:WebSocketListener ep;
     // Iterate through all available connections in the connections map
-    foreach id, con in consMap {
+    foreach id, con in connections {
         ep = con;
         // Push the text message to the connection
         ep->pushText(text) but {
