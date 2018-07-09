@@ -17,8 +17,6 @@
 import ballerina/http;
 import ballerina/test;
 
-@final string ASSOCIATED_CONNECTION = "ASSOCIATED_CONNECTION";
-
 // Before suite function
 @test:BeforeSuite
 function beforeFunc() {
