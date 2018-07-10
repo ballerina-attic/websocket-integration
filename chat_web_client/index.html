@@ -31,17 +31,17 @@ If you are using a secured connection change ws -> wss.
 </head>
 
 <body class="container">
-<h2 >Ballerina WebSocket Chat Application</h2>
+<h2>Ballerina WebSocket Chat Application</h2>
 <br>
 <div class="row">
     <div class="col-md-6">
         <form id="connectForm">
             <div class="form-group">
-                <b> Name:</b> <input type="text" class="form-control" id="personName" value="Ballerina">
+                <b> Username:</b> <input type="text" class="form-control" id="username" value="Ballerina">
                 <b> Age (optional):</b> <input type="text" class="form-control" id="personAge">
             </div>
             <button class="btn btn-primary" type="button" id="connectBtn"> Connect</button>
-            <button class="btn btn-danger" type="button" id="connectionCloseBtn"> Disconnect</button>
+            <button class="btn btn-danger" type="button" id="connectionCloseBtn" disabled> Disconnect</button>
         </form>
         <h4><span id="connectionStatus"></span></h4>
     </div>
@@ -54,103 +54,17 @@ If you are using a secured connection change ws -> wss.
             <div class="form-group">
                 <input type="text" class="form-control" id="sendText" placeholder="Type something and send">
             </div>
-            <button class="btn btn-primary" type="button" id="sendBtn">Send</button>
-            <button class="btn btn-warning" type="button" id="sendTextClrBtn">Clear</button>
+            <button class="btn btn-primary" type="button" id="sendBtn" disabled>Send</button>
+            <button class="btn btn-warning" type="button" id="sendTextClrBtn" disabled>Clear</button>
         </form>
     </div>
 </div>
 <hr>
 <div class="row">
-    <div class="col-md-6" id="responseBox">
-    </div>
+    <iframe class="col-md-6" id="responseBox"></iframe>
 </div>
-
-
-<!--
-JavaScript code related to web socket connection management
--->
-<script>
-        // Define the WebSocket URL (default one for Ballerina chat app sample
-        var url = "ws://localhost:9090/chat/";
-
-        // Initialize the WebSocketConnector
-        var ws = null;
-
-        // Connect to WebSocket when the connect button clicked
-        $('#connectBtn').click(function(){
-            // Get the name and the age of the user
-            personName = $('#personName').val();
-            personAge = $('#personAge').val();
-
-            if(personAge){
-                url = url +personName + "?age="+personAge;
-            }
-            else{
-                url = url + personName;
-            }
-            // Create the WebSocket with the Ballerina ws server
-            ws = new WebSocket(url);
-
-            // Assign the onMessage function to handle the new messages via WebSocket
-            ws.onmessage = onMessage;
-
-            // Assign the onClose function to handle the WebSocket connection terminations
-            ws.onclose = onClose;
-
-            // Set the connection status
-            $('#connectionStatus').text("Successfully connected to server").css("color", "green");
-        });
-
-
-        // Send the message if user clicks send button
-        $('#sendBtn').click(function () {
-            var text = $('#sendText').val();
-            sendMessage(text);
-        });
-
-        // Send the message if user press enter key
-        $('#sendText').keydown(function (e) {
-            if (e.keyCode == 13) {
-            	var text = $('#sendText').val();
-                sendMessage(text);
-            }
-        });
-
-        // Close the connection if user pressed Disconnect button
-        $('#connectionCloseBtn').click(function () {
-            ws.close();
-            $('#connectionStatus').text("connection closed.").css("color", "red");
-        });
-
-        $("#chatForm").submit(function() {
-            return false;
-        });
-
-        $("#connectForm").submit(function() {
-            return false;
-        });
-
-        $('#sendTextClrBtn').click(function(){
-            $('#sendText').val("");
-        });
-
-        function sendMessage(text) {
-            // Push the message to the WebSocket
-            ws.send(text);
-            $('#sendText').val("");
-        }
-
-        function onMessage(msg) {
-            // Display the received message in the web page
-            $('#responseBox').append('<h4>' + msg.data + '</h4>');
-        }
-
-        function onClose() {
-            $('#responseBox').append('<h4 style="color: red">Server closed the connection</h4>');
-            $('#connectionStatus').text("connection closed.").css("color", "red");
-        }
-
-</script>
-
+</div>
+<!--JavaScript code related to web socket connection management-->
+<script type="text/javascript" src="chatClient.js"></script>
 </body>
 </html>
