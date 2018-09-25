@@ -122,7 +122,7 @@ service<http:Service> ChatAppUpgrader bind { port: 9090 } {
         if (!connections.hasKey(username)){
             wsCaller.attributes[USER_NAME] = username;
         } else {
-            wsCaller->close(1003, "Username already exists.") but {
+            wsCaller->close(statusCode = 1003, reason = "Username already exists.") but {
                 error e => log:printError("Error sending message", err = e)
             };
             done;
