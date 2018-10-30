@@ -16,38 +16,36 @@
 
 import ballerina/log;
 import ballerina/http;
+//import ballerinax/docker;
+//import ballerinax/kubernetes;
 
 @final string USER_NAME = "USER_NAME";
 @final string AGE = "AGE";
 
-//import ballerinax/docker;
-//import ballerinax/kubernetes;
+// In-memory map to save the connections
+map<http:WebSocketListener> connections;
 
 //@docker:Config {
 //    registry:"ballerina.guides.io",
 //    name:"chat_app",
 //    tag:"v1.0"
 //}
-
+//
 //@kubernetes:Ingress {
-//    hostname:"ballerina.guides.io",
-//    name:"ballerina-guides-chat-app",
-//    path:"/"
+//    hostname: "ballerina.guides.io",
+//    name: "ballerina-guides-chat-app",
+//    path: "/"
 //}
 //
 //@kubernetes:Service {
-//    serviceType:"NodePort",
-//    name:"ballerina-guides-chat-app"
+//    serviceType: "NodePort",
+//    name: "ballerina-guides-chat-app"
 //}
 //
 //@kubernetes:Deployment {
-//    image:"ballerina.guides.io/chat_app:v1.0",
-//    name:"ballerina-guides-chat-app"
+//    image: "ballerina.guides.io/chat_app:v1.0",
+//    name: "ballerina-guides-chat-app"
 //}
-
-// In-memory map to save the connections
-map<http:WebSocketListener> connections;
-
 @http:ServiceConfig {
     basePath: "/chat"
 }
