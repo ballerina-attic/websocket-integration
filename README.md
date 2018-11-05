@@ -415,22 +415,26 @@ service<http:WebSocketService> ChatApp bind ep {
 - We have also specified `` @kubernetes:Service `` so that it will create a Kubernetes service which will expose the Ballerina service that is running on a Pod.  
 - In addition we have used `` @kubernetes:Ingress `` which is the external interface to access your service (with path `` /`` and host name ``ballerina.guides.io``)
 
-- Now you can build a Ballerina executable archive (.balx) of the service that we developed above, using the following command. It points to the service file that we developed above and it will create an executable binary out of that. 
+If you are using Minikube, you need to set a couple of additional attributes to the `@kubernetes:Deployment` annotation. 
+- `dockerCertPath` - The path to the certificates directory of Minikube (e.g., `/home/ballerina/.minikube/certs`). 
+- `dockerHost` - The host for the running cluster (e.g., `tcp://192.168.99.100:2376`). The IP address of the cluster can be found by running the `minikube ip` command.
+
+Now you can build a Ballerina executable archive (.balx) of the service that we developed above, using the following command. It points to the service file that we developed above and it will create an executable binary out of that. 
 This will also create the corresponding docker image and the Kubernetes artifacts using the Kubernetes annotations that you have configured above.
   
 ```
-$ballerina build chat_server
+$ ballerina build chat_server
 
 Run following command to deploy kubernetes artifacts:  
-kubectl apply -f ./target/chat_server/kubernetes
+kubectl apply -f ./target/kubernetes//chat_server
 ```
 
 - You can verify that the docker image that we specified in `` @kubernetes:Deployment `` is created, by using `` docker ps images ``. 
-- Also the Kubernetes artifacts related our service, will be generated in `` ./target/chat_server/kubernetes``. 
+- Also the Kubernetes artifacts related our service, will be generated in `` ./target/kubernetes/chat_app``. 
 - Now you can create the Kubernetes deployment using:
 
 ```
-$kubectl apply -f ./target/chat_server/kubernetes 
+$ kubectl apply -f ./target/kubernetes/chat_server 
 
 deployment.extensions "ballerina-guides-chat-app" created
 ingress.extensions "ballerina-guides-chat-app" created
@@ -439,14 +443,20 @@ service "ballerina-guides-chat-app" created
 
 - You can verify Kubernetes deployment, service and ingress are running properly, by using following Kubernetes commands. 
 ```
-$kubectl get service
-$kubectl get deploy
-$kubectl get pods
-$kubectl get ingress
+$ kubectl get service
+$ kubectl get deploy
+$ kubectl get pods
+$ kubectl get ingress
 ```
 
-- If everything is successfully deployed, you can invoke the service either via Node port or ingress. 
-
+ If everything is successfully deployed, you can invoke the service either via Node port or ingress. If you are using Minikube, you should use the IP address of the Minikube cluster obtained by running the `minikube ip` command. The port should be the node port obtained when running the `kubectl get services` command. Change the following line in `chat_app.bal` at the `websocket-chat-app/chat_web_client/`
+```javascript
+    var url = "ws://localhost:9090/chat/";
+```
+to
+```javascript
+    var url = "ws://<IP>:<NODE_PORT>/chat/";
+```
 ## Observability 
 Ballerina is by default observable. Meaning you can easily observe your services, resources, etc.
 However, observability is disabled by default via configuration. Observability can be enabled by adding following configurations to `ballerina.conf` file and starting the ballerina service using it. A sample configuration file can be found in `websocket-integration/guide/chat_server`.
