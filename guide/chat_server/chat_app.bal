@@ -19,11 +19,11 @@ import ballerina/http;
 //import ballerinax/docker;
 //import ballerinax/kubernetes;
 
-@final string USER_NAME = "USER_NAME";
-@final string AGE = "AGE";
+const string USER_NAME = "USER_NAME";
+const string AGE = "AGE";
 
 // In-memory map to save the connections
-map<http:WebSocketListener> connections;
+map<http:WebSocketCaller> connections = {};
 
 //@docker:Config {
 //    registry:"ballerina.guides.io",
@@ -49,7 +49,7 @@ map<http:WebSocketListener> connections;
 @http:ServiceConfig {
     basePath: "/chat"
 }
-service<http:Service> ChatAppUpgrader bind { port: 9090 } {
+service ChatAppUpgrader on new http:Listener(9090) {
 
     // Resource to upgrade from HTTP to WebSocket
     @http:ResourceConfig {
@@ -58,38 +58,36 @@ service<http:Service> ChatAppUpgrader bind { port: 9090 } {
             upgradeService: ChatApp
         }
     }
-    upgrader(endpoint caller, http:Request req, string username) {
-        endpoint http:WebSocketListener wsCaller;
-        map<string> headers;
-        wsCaller = caller->acceptWebSocketUpgrade(headers);
+    resource function upgrader(http:Caller caller, http:Request req, string username) {
+        http:WebSocketCaller wsCaller;
+        wsCaller = caller->acceptWebSocketUpgrade({});
 
         // Validate if username is unique
         if (!connections.hasKey(username)){
             wsCaller.attributes[USER_NAME] = username;
         } else {
-            wsCaller->close(statusCode = 1003, reason = "Username already exists.") but {
-                error e => log:printError("Error sending message", err = e)
-            };
-            done;
+            var err = wsCaller->close(statusCode = 1003, reason = "Username already exists.");
+            if (err is error) {
+                log:printError("Error sending message", err = err);
+            }
+            return;
         }
 
         // Check if the age parameter is available and if so add it to the attributes
         string broadCastMsg;
-        match req.getQueryParams()["age"] {
-            string age => {
-                wsCaller.attributes[AGE] = age;
-                broadCastMsg = string `{{username}} with age {{age}} connected to chat`;
-            }
-            () => {
-                broadCastMsg = string `{{username}} connected to chat`;
-
-            }
+        var age = req.getQueryParams()["age"];
+        if (age is string) {
+            wsCaller.attributes[AGE] = age;
+            broadCastMsg = string `{{username}} with age {{age}} connected to chat`;
+        } else {
+            broadCastMsg = string `{{username}} connected to chat`;
         }
 
         // Inform the current user
-        wsCaller->pushText("Hi " + username + "! You have succesfully connected to the chat") but {
-            error e => log:printError("Error sending message", err = e)
-        };
+        var err = wsCaller->pushText("Hi " + username + "! You have succesfully connected to the chat");
+        if (err is error) {
+            log:printError("Error sending message", err = err);
+        }
 
         // Broadcast the "new user connected" message to existing connections
         broadcast(broadCastMsg);
@@ -100,10 +98,10 @@ service<http:Service> ChatAppUpgrader bind { port: 9090 } {
 }
 
 
-service<http:WebSocketService> ChatApp {
+service ChatApp =  @http:WebSocketServiceConfig service {
 
     // This resource will trigger when a new text message arrives to the chat server
-    onText(endpoint caller, string text) {
+    resource function onText(http:WebSocketCaller caller, string text) {
         // Prepare the message
         string msg = string `{{getAttributeStr(caller, USER_NAME)}}: {{text}}`;
         // Broadcast the message to existing connections
@@ -113,7 +111,7 @@ service<http:WebSocketService> ChatApp {
     }
 
     // This resource will trigger when a existing connection closes
-    onClose(endpoint caller, int statusCode, string reason) {
+    resource function onClose(http:WebSocketCaller caller, int statusCode, string reason) {
         // Remove the client from the in memory map
         _ = connections.remove(getAttributeStr(caller, USER_NAME));
         // Prepare the client left message
@@ -121,22 +119,23 @@ service<http:WebSocketService> ChatApp {
         // Broadcast the message to existing connections
         broadcast(msg);
     }
-}
+};
 
 // Send the text to all connections in the connections map
 function broadcast(string text) {
-    endpoint http:WebSocketListener caller;
+    http:WebSocketCaller caller;
     // Iterate through all available connections in the connections map
     foreach id, conn in connections {
         caller = conn;
         // Push the text message to the connection
-        caller->pushText(text) but {
-            error e => log:printError("Error sending message")
-        };
+        var err = caller->pushText(text);
+        if (err is error) {
+            log:printError("Error sending message", err = err);
+        }
     }
 }
 
 // Gets attribute for given key from a WebSocket endpoint
-function getAttributeStr(http:WebSocketListener ep, string key) returns (string) {
+function getAttributeStr(http:WebSocketCaller ep, string key) returns (string) {
     return <string>ep.attributes[key];
 }

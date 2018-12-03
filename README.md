@@ -1,8 +1,8 @@
 [![Build Status](https://travis-ci.org/ballerina-guides/websocket-integration.svg?branch=master)](https://travis-ci.org/ballerina-guides/websocket-integration)
-# WebSockets
-[WebSocket](https://tools.ietf.org/html/rfc6455) is a computer communications protocol that allows you to open an interactive communication session between the user's browser and a server. With WebSockets, you can send messages to a server and receive responses based on events without having to query the server for a response. Ballerina language has built-in support for creating services with WebSockets.
+# WebSocket
+[WebSocket](https://tools.ietf.org/html/rfc6455) is a computer communications protocol that allows you to open an interactive communication session between the user's browser and a server. With WebSocket, you can send messages to a server and receive responses based on events without having to query the server for a response. Ballerina language has built-in support for creating services with WebSocket.
 
-> This guide showcases how you can use WebSockets to develop an interactive web application and build the application server using Ballerina language.
+> This guide showcases how you can use WebSocket to develop an interactive web application and build the application server using Ballerina language.
 
 The following are the sections available in this guide.
 
@@ -14,7 +14,7 @@ The following are the sections available in this guide.
 - [Observability](#observability)
 
 ## What you'll build
-You'll build a chat application using WebSockets. This guide instructs you how to develop the chat application server completely using Ballerina language. The Ballerina WebSocket chat application has four resources to handle WebSocket connections. Refer to the following diagram to understand the implementation of the chat application.
+You'll build a chat application using WebSocket. This guide instructs you how to develop the chat application server completely using Ballerina language. The Ballerina WebSocket chat application has four resources to handle WebSocket connections. Refer to the following diagram to understand the implementation of the chat application.
 
 &nbsp;
 ![WebSocket Scenario](images/websocket-integration.svg)
@@ -56,7 +56,7 @@ websocket-integration
 
 The `chat_server` is the package for the chat application server side implementation.  
 
-The `chat_web_client` is the web client for the chat application. This guide elaborates more on the server-side implementation of the chat application using WebSockets. 
+The `chat_web_client` is the web client for the chat application. This guide elaborates more on the server-side implementation of the chat application using WebSocket. 
 
 - Create the above directories in your local machine and also create empty `.bal` files.
 
@@ -69,7 +69,7 @@ The `chat_web_client` is the web client for the chat application. This guide ela
 
 First, you need to import the http package using the `import ballerina/http;` statement.
 
-Then, you can implement the `service<http:Service> ChatAppUpgrader` to handle HTTP Upgrade requests from HTTP to WebSocket.
+Then, you can implement the `service ChatAppUpgrader` to handle HTTP Upgrade requests from HTTP to WebSocket.
 Before the `upgrader` resource we have given the resource configuration for the `upgrader` resource as follows,
 ```
     @http:ResourceConfig {
@@ -81,12 +81,12 @@ Before the `upgrader` resource we have given the resource configuration for the 
 ```
 The `upgradePath: "/{name}"` statement will be the path for the chat application endpoint with `{name}` as a path parameter. ` upgradeService: ChatApp` statement will set the `ChatApp` as the WebSocket service to serve WebSocket requests.
 
-You can define a WebSocket web service as `service<http:WebSocketService> ChatApp`. `ChatApp` WebSocket service handles the already upgraded WebSocket connections.
+You can define a WebSocket web service as `service ChatApp = @http:WebSocketServiceConfig service { ..`. `ChatApp` WebSocket service handles the already upgraded WebSocket connections.
 
 Next, you need to add resources to handle each of the following events.
-* Opening a new WebSocket - onOpen
-* Receiving messages form WebSockets - onText
-* Closing an existing WebSockets - onClose
+* Opening a new WebSocket - `onOpen`
+* Receiving messages form WebSockets - `onText`
+* Closing an existing WebSockets - `onClose`
 
 Inside each resource you can implement the logic as per the requirement. When following this guide, you will implement the chat application logic inside those resources. You can then use an in-memory map to save all the WebSocket connections. Thereafter, you can add the new incoming WebSocket connections to the in-memory map inside the `onOpen` resource. Remove the WebSocket connection from the map inside the `onClose` resource and broadcast the message to all the connections in the map inside the `onText` resource.
 
@@ -95,56 +95,55 @@ Inside each resource you can implement the logic as per the requirement. When fo
 import ballerina/log;
 import ballerina/http;
 
-@final string USER_NAME = "USER_NAME";
-@final string AGE = "AGE";
+//Define contants for the username and age
+const string USER_NAME = "USER_NAME";
+const string AGE = "AGE";
 
 // In-memory map to save the connections
-map<http:WebSocketListener> connections;
+map<http:WebSocketCaller> connections = {};
 
 @http:ServiceConfig {
     basePath: "/chat"
 }
-service<http:Service> ChatAppUpgrader bind { port: 9090 } {
+service ChatAppUpgrader on new http:Listener(9090) {
 
-    // Upgrade from HTTP to WebSocket and define the service the WebSocket client
+    // Resource to upgrade from HTTP to WebSocket
     @http:ResourceConfig {
         webSocketUpgrade: {
             upgradePath: "/{username}",
             upgradeService: ChatApp
         }
     }
-    upgrader(endpoint caller, http:Request req, string username) {
-        endpoint http:WebSocketListener wsCaller;
-        map<string> headers;
-        wsCaller = caller->acceptWebSocketUpgrade(headers);
+    resource function upgrader(http:Caller caller, http:Request req, string username) {
+        http:WebSocketCaller wsCaller;
+        wsCaller = caller->acceptWebSocketUpgrade({});
 
         // Validate if username is unique
         if (!connections.hasKey(username)){
             wsCaller.attributes[USER_NAME] = username;
         } else {
-            wsCaller->close(statusCode = 1003, reason = "Username already exists.") but {
-                error e => log:printError("Error sending message", err = e)
-            };
-            done;
+            var err = wsCaller->close(statusCode = 1003, reason = "Username already exists.");
+            if (err is error) {
+                log:printError("Error sending message", err = err);
+            }
+            return;
         }
 
         // Check if the age parameter is available and if so add it to the attributes
         string broadCastMsg;
-        match req.getQueryParams()["age"] {
-            string age => {
-                wsCaller.attributes[AGE] = age;
-                broadCastMsg = string `{{username}} with age {{age}} connected to chat`;
-            }
-            () => {
-                broadCastMsg = string `{{username}} connected to chat`;
-
-            }
+        var age = req.getQueryParams()["age"];
+        if (age is string) {
+            wsCaller.attributes[AGE] = age;
+            broadCastMsg = string `{{username}} with age {{age}} connected to chat`;
+        } else {
+            broadCastMsg = string `{{username}} connected to chat`;
         }
 
         // Inform the current user
-        wsCaller->pushText("Hi " + username + "! You have succesfully connected to the chat") but {
-            error e => log:printError("Error sending message", err = e)
-        };
+        var err = wsCaller->pushText("Hi " + username + "! You have succesfully connected to the chat");
+        if (err is error) {
+            log:printError("Error sending message", err = err);
+        }
 
         // Broadcast the "new user connected" message to existing connections
         broadcast(broadCastMsg);
@@ -155,10 +154,10 @@ service<http:Service> ChatAppUpgrader bind { port: 9090 } {
 }
 
 
-service<http:WebSocketService> ChatApp {
+service ChatApp =  @http:WebSocketServiceConfig service {
 
     // This resource will trigger when a new text message arrives to the chat server
-    onText(endpoint caller, string text) {
+    resource function onText(http:WebSocketCaller caller, string text) {
         // Prepare the message
         string msg = string `{{getAttributeStr(caller, USER_NAME)}}: {{text}}`;
         // Broadcast the message to existing connections
@@ -168,7 +167,7 @@ service<http:WebSocketService> ChatApp {
     }
 
     // This resource will trigger when a existing connection closes
-    onClose(endpoint caller, int statusCode, string reason) {
+    resource function onClose(http:WebSocketCaller caller, int statusCode, string reason) {
         // Remove the client from the in memory map
         _ = connections.remove(getAttributeStr(caller, USER_NAME));
         // Prepare the client left message
@@ -176,23 +175,24 @@ service<http:WebSocketService> ChatApp {
         // Broadcast the message to existing connections
         broadcast(msg);
     }
-}
+};
 
 // Send the text to all connections in the connections map
 function broadcast(string text) {
-    endpoint http:WebSocketListener caller;
+    http:WebSocketCaller caller;
     // Iterate through all available connections in the connections map
     foreach id, conn in connections {
         caller = conn;
         // Push the text message to the connection
-        caller->pushText(text) but {
-            error e => log:printError("Error sending message")
-        };
+        var err = caller->pushText(text);
+        if (err is error) {
+            log:printError("Error sending message", err = err);
+        }
     }
 }
 
 // Gets attribute for given key from a WebSocket endpoint
-function getAttributeStr(http:WebSocketListener ep, string key) returns (string) {
+function getAttributeStr(http:WebSocketCaller ep, string key) returns (string) {
     return <string>ep.attributes[key];
 }
 ```
