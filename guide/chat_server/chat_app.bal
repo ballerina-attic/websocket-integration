@@ -125,7 +125,7 @@ service ChatApp =  @http:WebSocketServiceConfig service {
 function broadcast(string text) {
     http:WebSocketCaller caller;
     // Iterate through all available connections in the connections map
-    foreach id, conn in connections {
+    foreach var (id, conn) in connections {
         caller = conn;
         // Push the text message to the connection
         var err = caller->pushText(text);

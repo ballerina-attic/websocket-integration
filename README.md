@@ -181,7 +181,7 @@ service ChatApp =  @http:WebSocketServiceConfig service {
 function broadcast(string text) {
     http:WebSocketCaller caller;
     // Iterate through all available connections in the connections map
-    foreach id, conn in connections {
+    foreach var (id, conn) in connections {
         caller = conn;
         // Push the text message to the connection
         var err = caller->pushText(text);
@@ -333,24 +333,18 @@ import ballerinax/docker;
     name:"chat_app",
     tag:"v1.0"
 }
-@docker:Expose{}
-endpoint http:ServiceEndpoint ep {
-    port:9090
-};
-
-// Define constants
 
 @http:WebSocketServiceConfig {
     basePath:"/chat"
 }
-service<http:WebSocketService> ChatApp bind ep {
+service ChatApp on new http:Listener(9090) {
 ``` 
 
 - Now you can build a Ballerina executable archive (.balx) of the service that we developed above, using the following command. It points to the service file that we developed above and it will create an executable binary out of that. 
 This will also create the corresponding docker image using the docker annotations that you have configured above. Navigate to the `<SAMPLE_ROOT>/src/` folder and run the following command.  
   
 ```
-$ballerina build chat_server
+$ ballerina build chat_server
 
 Run following command to start docker container: 
 docker run -d -p 9090:9090 ballerina.guides.io/chat_app:v1.0
@@ -399,16 +393,10 @@ import ballerinax/kubernetes;
     name:"ballerina-guides-chat-app"
 }
 
-endpoint http:ServiceEndpoint ep {
-    port:9090
-};
-
-// Define constants
-
 @http:WebSocketServiceConfig {
     basePath:"/chat"
 }
-service<http:WebSocketService> ChatApp bind ep {    
+service ChatApp on new http:Listener(9090) {    
 ``` 
 
 - Here we have used ``  @kubernetes:Deployment `` to specify the docker image name which will be created as part of building this service. 
@@ -426,7 +414,7 @@ This will also create the corresponding docker image and the Kubernetes artifact
 $ ballerina build chat_server
 
 Run following command to deploy kubernetes artifacts:  
-kubectl apply -f ./target/kubernetes//chat_server
+kubectl apply -f ./target/kubernetes/chat_server
 ```
 
 - You can verify that the docker image that we specified in `` @kubernetes:Deployment `` is created, by using `` docker ps images ``. 
