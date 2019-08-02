@@ -58,13 +58,13 @@ service ChatAppUpgrader on new http:Listener(9090) {
             upgradeService: ChatApp
         }
     }
-    resource function upgrader(http:Caller caller, http:Request req, string username) {
+    resource function upgrader(http:Caller caller, http:Request request, string username) {
         http:WebSocketCaller wsCaller;
         wsCaller = caller->acceptWebSocketUpgrade({});
 
         // Validate if username is unique
-        if (!connections.hasKey(username)){
-            wsCaller.attributes[USER_NAME] = username;
+        if (!connections.hasKey(username)) {
+            wsCaller.setAttribute(USER_NAME, username);
         } else {
             var err = wsCaller->close(statusCode = 1003, reason = "Username already exists.");
             if (err is error) {
@@ -73,14 +73,14 @@ service ChatAppUpgrader on new http:Listener(9090) {
             return;
         }
 
-        // Check if the age parameter is available and if so add it to the attributes
+        // Check if the age parameter is available and if so add it to the attributes.
         string broadCastMsg;
-        var age = req.getQueryParams()["age"];
+        var age = request.getQueryParamValue("age");
         if (age is string) {
-            wsCaller.attributes[AGE] = age;
-            broadCastMsg = string `{{username}} with age {{age}} connected to chat`;
+            wsCaller.setAttribute(AGE, age);
+            broadCastMsg = username + " with age " + age + " connected to chat";
         } else {
-            broadCastMsg = string `{{username}} connected to chat`;
+            broadCastMsg = username + " connected to chat";
         }
 
         // Inform the current user
@@ -98,12 +98,12 @@ service ChatAppUpgrader on new http:Listener(9090) {
 }
 
 
-service ChatApp =  @http:WebSocketServiceConfig service {
+service ChatApp = @http:WebSocketServiceConfig {} service {
 
     // This resource will trigger when a new text message arrives to the chat server
     resource function onText(http:WebSocketCaller caller, string text) {
         // Prepare the message
-        string msg = string `{{getAttributeStr(caller, USER_NAME)}}: {{text}}`;
+        string msg = getAttributeStr(caller, USER_NAME) + ": " + text;
         // Broadcast the message to existing connections
         broadcast(msg);
         // Print the message in the server console
@@ -115,7 +115,7 @@ service ChatApp =  @http:WebSocketServiceConfig service {
         // Remove the client from the in memory map
         _ = connections.remove(getAttributeStr(caller, USER_NAME));
         // Prepare the client left message
-        string msg = string `{{getAttributeStr(caller, USER_NAME)}} left the chat`;
+        string msg = getAttributeStr(caller, USER_NAME) + " left the chat";
         // Broadcast the message to existing connections
         broadcast(msg);
     }
@@ -125,7 +125,7 @@ service ChatApp =  @http:WebSocketServiceConfig service {
 function broadcast(string text) {
     http:WebSocketCaller caller;
     // Iterate through all available connections in the connections map
-    foreach var (id, conn) in connections {
+    foreach var conn in connections {
         caller = conn;
         // Push the text message to the connection
         var err = caller->pushText(text);
@@ -137,5 +137,5 @@ function broadcast(string text) {
 
 // Gets attribute for given key from a WebSocket endpoint
 function getAttributeStr(http:WebSocketCaller ep, string key) returns (string) {
-    return <string>ep.attributes[key];
+    return <string> ep.getAttribute(key);
 }

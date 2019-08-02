@@ -31,7 +31,7 @@ function afterFunc() {
     test:stopServices("chatserver");
 }
 
-@test:Config
+@test:Config{}
 function testChatServer() {
     test:assertTrue(true, msg = "test");
 }
