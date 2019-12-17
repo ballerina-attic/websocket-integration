@@ -45,17 +45,18 @@ Ballerina is a complete programming language that can have any custom project st
 ```
 websocket-integration
   ├── guide
-  |     └── chat_server
-  |        ├── chat_app.bal
-  |        └── tests
-  |             └── chat_app_test.bal
+  |     └── src 
+  |         └── chat_server
+  |             ├── chat_app.bal
+  |             └── tests
+  |                 └── chat_app_test.bal
   |
   └── chat_web_client
       ├── chatClient.js  
       └── index.html
 ```
 
-The `chat_server` is the package for the chat application server side implementation.  
+The `chat_server` is the module for the chat application server side implementation.  
 
 The `chat_web_client` is the web client for the chat application. This guide elaborates more on the server-side implementation of the chat application using WebSocket. 
 
@@ -82,7 +83,7 @@ Before the `upgrader` resource we have given the resource configuration for the 
 ```
 The `upgradePath: "/{name}"` statement will be the path for the chat application endpoint with `{name}` as a path parameter. ` upgradeService: ChatApp` statement will set the `ChatApp` as the WebSocket service to serve WebSocket requests.
 
-You can define a WebSocket web service as `service ChatApp = @http:WebSocketServiceConfig service { ..`. `ChatApp` WebSocket service handles the already upgraded WebSocket connections.
+You can define a WebSocket web service as `service ChatApp = @http:WebSocketServiceConfig {} service { ..`. `ChatApp` WebSocket service handles the already upgraded WebSocket connections.
 
 Next, you need to add resources to handle each of the following events.
 * Opening a new WebSocket - `onOpen`
@@ -120,8 +121,8 @@ service ChatAppUpgrader on new http:Listener(9090) {
         wsCaller = caller->acceptWebSocketUpgrade({});
 
         // Validate if username is unique
-        if (!connections.hasKey(username)){
-            wsCaller.attributes[USER_NAME] = username;
+        if (!connections.hasKey(username)) {
+            wsCaller.setAttribute(USER_NAME, username);
         } else {
             var err = wsCaller->close(statusCode = 1003, reason = "Username already exists.");
             if (err is error) {
@@ -130,14 +131,14 @@ service ChatAppUpgrader on new http:Listener(9090) {
             return;
         }
 
-        // Check if the age parameter is available and if so add it to the attributes
+        // Check if the age parameter is available and if so add it to the attributes.
         string broadCastMsg;
-        var age = req.getQueryParams()["age"];
+        var age = request.getQueryParamValue("age");
         if (age is string) {
-            wsCaller.attributes[AGE] = age;
-            broadCastMsg = string `{{username}} with age {{age}} connected to chat`;
+            wsCaller.setAttribute(AGE, age);
+            broadCastMsg = username + " with age " + age + " connected to chat";
         } else {
-            broadCastMsg = string `{{username}} connected to chat`;
+            broadCastMsg = username + " connected to chat";
         }
 
         // Inform the current user
@@ -155,12 +156,12 @@ service ChatAppUpgrader on new http:Listener(9090) {
 }
 
 
-service ChatApp =  @http:WebSocketServiceConfig service {
+service ChatApp = @http:WebSocketServiceConfig {} service {
 
     // This resource will trigger when a new text message arrives to the chat server
     resource function onText(http:WebSocketCaller caller, string text) {
         // Prepare the message
-        string msg = string `{{getAttributeStr(caller, USER_NAME)}}: {{text}}`;
+        string msg = getAttributeStr(caller, USER_NAME) + ": " + data;
         // Broadcast the message to existing connections
         broadcast(msg);
         // Print the message in the server console
@@ -172,7 +173,7 @@ service ChatApp =  @http:WebSocketServiceConfig service {
         // Remove the client from the in memory map
         _ = connections.remove(getAttributeStr(caller, USER_NAME));
         // Prepare the client left message
-        string msg = string `{{getAttributeStr(caller, USER_NAME)}} left the chat`;
+        string msg = getAttributeStr(caller, USER_NAME) + " left the chat";
         // Broadcast the message to existing connections
         broadcast(msg);
     }
@@ -182,7 +183,7 @@ service ChatApp =  @http:WebSocketServiceConfig service {
 function broadcast(string text) {
     http:WebSocketCaller caller;
     // Iterate through all available connections in the connections map
-    foreach var (id, conn) in connections {
+    foreach var conn in connection {
         caller = conn;
         // Push the text message to the connection
         var err = caller->pushText(text);
@@ -294,27 +295,26 @@ To run the unit tests, open your terminal and navigate to `websocket-integration
 $ ballerina test
 ```
 
-To check the implementation of the test file, refer to the [chat_app_test.bal](guide/chat_server/tests/chat_app_test.bal).
+To check the implementation of the test file, refer to the [chat_app_test.bal](guide/src/chat_server/tests/chat_app_test.bal).
 
 ## Deployment
 Once you are done with the development, you can deploy the service using any of the methods that we listed below. 
 
 ### Deploying locally
 
-- As the first step you can build a Ballerina executable archive (.balx) of the service that we developed above. Navigate to `websocket-integration/guide` and run the following command. 
+- As the first step you can build a Ballerina executable archive (.jar) of the service that we developed above. Navigate to `websocket-integration/guide` and run the following command. 
 ```
    $ ballerina build chat_server
 ```
 
-- Once the chat_server.balx is created inside the target folder, you can run that with the following command. 
+- Once the chat_server-executable.jar is created inside the target folder, you can run that with the following command. 
 ```
-   $ ballerina run target/chat_server.balx
+   $ ballerina run target/bin/chat_server-executable.jar
 ```
 
 - The successful execution of the service will show us the following output. 
 ```
-   ballerina: initiating service(s) in 'target/chat_server.balx'
-   ballerina: started HTTP/WS endpoint 0.0.0.0:9090
+   [ballerina/http] started HTTP/WS listener 0.0.0.0:9090
 ```
 
 
